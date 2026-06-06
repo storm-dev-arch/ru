@@ -3,47 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADMIN PANEL</title>
+    <title>ADMIN.SYS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #000; color: #fff; }
+        body { font-family: 'Inter', sans-serif; background-color: #050505; color: #fff; }
         .hidden { display: none !important; }
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .nav-btn.active { background-color: #171717; }
+        .nav-btn.active { background-color: #171717; border-left: 3px solid #fff; }
+        .log-box { font-family: 'Courier New', Courier, monospace; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; }
     </style>
 </head>
 <body class="min-h-screen flex">
     <div id="login-screen" class="w-full min-h-screen flex items-center justify-center bg-black">
-        <form id="login-form" class="bg-neutral-900 p-8 rounded-xl border border-neutral-800 flex flex-col gap-4 w-96">
-            <h2 class="text-2xl font-bold tracking-widest text-center text-white">ADMIN LOGIN</h2>
-            <input type="text" id="username" placeholder="Username" class="bg-black border border-neutral-800 p-3 rounded text-white outline-none focus:border-neutral-500" required>
-            <input type="password" id="password" placeholder="Password" class="bg-black border border-neutral-800 p-3 rounded text-white outline-none focus:border-neutral-500" required>
-            <button type="submit" class="bg-white text-black font-bold p-3 rounded hover:bg-neutral-200 transition-colors mt-2">LOGIN</button>
+        <form id="login-form" class="bg-[#0a0a0a] p-10 rounded-lg border border-neutral-800 flex flex-col gap-6 w-96 shadow-2xl">
+            <h2 class="text-3xl font-black tracking-widest text-center text-white">SYSTEM</h2>
+            <input type="text" id="username" placeholder="USER" class="bg-black border border-neutral-800 p-4 rounded text-white outline-none focus:border-neutral-500 tracking-widest" required>
+            <input type="password" id="password" placeholder="KEY" class="bg-black border border-neutral-800 p-4 rounded text-white outline-none focus:border-neutral-500 tracking-widest" required>
+            <button type="submit" class="bg-white text-black font-bold p-4 rounded hover:bg-neutral-300 transition-colors mt-2 tracking-widest">ACCESS</button>
         </form>
     </div>
 
     <div id="dashboard-screen" class="w-full flex hidden">
-        <nav class="w-64 border-r border-neutral-900 p-6 flex flex-col gap-4 bg-black z-10">
-            <h1 class="text-2xl font-bold tracking-widest mb-8 text-neutral-100">ADMIN.</h1>
-            <button onclick="switchTab('stats')" id="btn-stats" class="nav-btn active text-left p-3 rounded-lg hover:bg-neutral-900">Статистика</button>
-            <button onclick="switchTab('players')" id="btn-players" class="nav-btn text-left p-3 rounded-lg hover:bg-neutral-900">Игроки</button>
-            <button onclick="logout()" class="text-left p-3 rounded-lg text-red-500 hover:bg-neutral-900 mt-auto">Выход</button>
+        <nav class="w-72 border-r border-neutral-900 p-6 flex flex-col gap-4 bg-[#050505] z-10 shadow-xl">
+            <h1 class="text-3xl font-black tracking-widest mb-10 text-neutral-100 mt-4">ADMIN.</h1>
+            <button onclick="switchTab('stats')" id="btn-stats" class="nav-btn active text-left p-4 rounded-r-lg hover:bg-[#111] font-semibold tracking-wide">СТАТИСТИКА</button>
+            <button onclick="switchTab('servers')" id="btn-servers" class="nav-btn text-left p-4 rounded-r-lg hover:bg-[#111] font-semibold tracking-wide">СЕРВЕРА</button>
+            <button onclick="switchTab('players')" id="btn-players" class="nav-btn text-left p-4 rounded-r-lg hover:bg-[#111] font-semibold tracking-wide">ИГРОКИ</button>
+            <button onclick="switchTab('console')" id="btn-console" class="nav-btn text-left p-4 rounded-r-lg hover:bg-[#111] font-semibold tracking-wide">КОНСОЛЬ</button>
+            <button onclick="logout()" class="text-left p-4 rounded-r-lg text-red-600 hover:bg-[#111] mt-auto font-semibold tracking-wide">ВЫХОД</button>
         </nav>
 
-        <main class="flex-1 p-10 bg-black relative overflow-y-auto h-screen">
-            <div id="tab-stats" class="tab-content fade-in">
-                <h2 class="text-3xl font-bold mb-6">Главная статистика</h2>
-                <div class="bg-neutral-900 p-6 rounded-xl border border-neutral-800 w-64">
-                    <p class="text-neutral-400">Всего игроков</p>
-                    <p id="stat-total-players" class="text-4xl font-semibold mt-2">0</p>
+        <main class="flex-1 p-12 bg-[#0a0a0a] relative overflow-y-auto h-screen">
+            <div id="tab-stats" class="tab-content block">
+                <h2 class="text-4xl font-black mb-8 tracking-wide">ОБЗОР</h2>
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="bg-black p-8 rounded border border-neutral-800">
+                        <p class="text-neutral-500 font-bold tracking-widest text-sm">ОНЛАЙН</p>
+                        <p id="stat-online" class="text-6xl font-black mt-4">0</p>
+                    </div>
+                    <div class="bg-black p-8 rounded border border-neutral-800">
+                        <p class="text-neutral-500 font-bold tracking-widest text-sm">БАЗА ИГРОКОВ</p>
+                        <p id="stat-total" class="text-6xl font-black mt-4">0</p>
+                    </div>
+                    <div class="bg-black p-8 rounded border border-neutral-800">
+                        <p class="text-neutral-500 font-bold tracking-widest text-sm">АКТИВНЫЕ СЕРВЕРА</p>
+                        <p id="stat-servers" class="text-6xl font-black mt-4">0</p>
+                    </div>
                 </div>
             </div>
-            <div id="tab-players" class="tab-content hidden fade-in">
-                <h2 class="text-3xl font-bold mb-6">База игроков</h2>
-                <div class="bg-neutral-900 rounded-xl border border-neutral-800 overflow-hidden">
-                    <div id="players-list" class="flex flex-col"></div>
+
+            <div id="tab-servers" class="tab-content hidden">
+                <h2 class="text-4xl font-black mb-8 tracking-wide">СЕРВЕРА</h2>
+                <div class="grid grid-cols-2 gap-6" id="servers-list"></div>
+            </div>
+
+            <div id="tab-players" class="tab-content hidden">
+                <h2 class="text-4xl font-black mb-8 tracking-wide">БАЗА ДАННЫХ</h2>
+                <div class="bg-black rounded border border-neutral-800 overflow-hidden" id="players-list"></div>
+            </div>
+
+            <div id="tab-console" class="tab-content hidden flex flex-col h-full">
+                <h2 class="text-4xl font-black mb-8 tracking-wide">ТЕРМИНАЛ</h2>
+                <div class="flex gap-4 mb-4">
+                    <select id="server-selector" class="bg-black border border-neutral-800 p-3 rounded text-white outline-none w-64">
+                        <option value="all">Все сервера</option>
+                    </select>
                 </div>
+                <div class="flex gap-4 mb-6">
+                    <input type="text" id="cmd-input" placeholder="Введите Lua скрипт..." class="flex-1 bg-black border border-neutral-800 p-4 rounded text-white outline-none font-mono">
+                    <button onclick="sendCommand('console')" class="bg-white text-black font-bold px-8 rounded hover:bg-neutral-300">EXECUTE</button>
+                </div>
+                <div class="flex-1 bg-black border border-neutral-800 rounded p-4 overflow-y-auto log-box text-sm flex flex-col gap-1" id="log-container"></div>
             </div>
         </main>
     </div>
@@ -51,29 +83,20 @@
     <script>
         const API_BASE = "https://ruapi.onrender.com/api";
         let token = localStorage.getItem('adminToken');
+        let refreshInterval;
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            
-            try {
-                const res = await fetch(`${API_BASE}/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: u, password: p })
-                });
-                const data = await res.json();
-                
-                if (data.token) {
-                    localStorage.setItem('adminToken', data.token);
-                    token = data.token;
-                    checkAuth();
-                } else {
-                    alert("Ошибка входа");
-                }
-            } catch(err) {
-                alert("Ошибка соединения с сервером");
+            const res = await fetch(`${API_BASE}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: username.value, password: password.value })
+            });
+            const data = await res.json();
+            if (data.token) {
+                localStorage.setItem('adminToken', data.token);
+                token = data.token;
+                checkAuth();
             }
         });
 
@@ -82,9 +105,11 @@
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('dashboard-screen').classList.remove('hidden');
                 loadData();
+                refreshInterval = setInterval(loadData, 2000);
             } else {
                 document.getElementById('login-screen').classList.remove('hidden');
                 document.getElementById('dashboard-screen').classList.add('hidden');
+                clearInterval(refreshInterval);
             }
         }
 
@@ -101,35 +126,89 @@
             document.getElementById(`btn-${tabId}`).classList.add('active');
         }
 
+        async function sendCommand(action, userId = null) {
+            const jobId = document.getElementById('server-selector')?.value || "all";
+            const code = document.getElementById('cmd-input')?.value || "";
+            
+            await fetch(`${API_BASE}/admin/command`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, jobId, userId, code })
+            });
+            
+            if (action === 'console') document.getElementById('cmd-input').value = "";
+        }
+
         async function loadData() {
             try {
-                const res = await fetch(`${API_BASE}/admin/players`);
-                const players = await res.json();
+                const res = await fetch(`${API_BASE}/admin/data`);
+                const db = await res.json();
                 
-                document.getElementById('stat-total-players').innerText = players.length;
-                const list = document.getElementById('players-list');
-                list.innerHTML = '';
+                let online = 0;
+                const serversList = document.getElementById('servers-list');
+                const selector = document.getElementById('server-selector');
                 
-                players.forEach(p => {
-                    const avatarUrl = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${p.userId}&size=150x150&format=Png&isCircular=true`;
-                    list.innerHTML += `
-                        <div class="p-4 border-b border-neutral-800 flex items-center justify-between hover:bg-neutral-800 transition-colors">
-                            <div class="flex items-center gap-4">
-                                <img src="${avatarUrl}" class="w-12 h-12 rounded-full border border-neutral-700">
-                                <div>
-                                    <p class="font-bold text-white">${p.username}</p>
-                                    <p class="text-xs text-neutral-500">ID: ${p.userId}</p>
+                if (document.getElementById('tab-servers').classList.contains('hidden') === false || document.getElementById('tab-console').classList.contains('hidden') === false) {
+                    serversList.innerHTML = '';
+                    const oldVal = selector.value;
+                    selector.innerHTML = '<option value="all">Все сервера</option>';
+                    
+                    Object.keys(db.servers).forEach(id => {
+                        const srv = db.servers[id];
+                        online += srv.playerCount;
+                        
+                        serversList.innerHTML += `
+                            <div class="bg-black p-6 rounded border border-neutral-800 relative">
+                                <div class="absolute top-4 right-4 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                                <p class="text-xs text-neutral-500 mb-2 font-mono">${id}</p>
+                                <p class="text-2xl font-black mb-4">Игроков: ${srv.playerCount}</p>
+                                <div class="flex gap-2 text-xs text-neutral-400 font-mono flex-wrap">
+                                    ${srv.players.map(p => `<span>[${p}]</span>`).join('')}
                                 </div>
                             </div>
-                            <span class="text-sm bg-black border border-neutral-800 px-3 py-1 rounded-full text-neutral-300">
-                                Визиты: ${p.visits}
-                            </span>
-                        </div>
-                    `;
-                });
-            } catch(err) {
-                console.error("Сервер недоступен");
-            }
+                        `;
+                        selector.innerHTML += `<option value="${id}">${id} (${srv.playerCount})</option>`;
+                    });
+                    selector.value = oldVal || "all";
+                } else {
+                    Object.keys(db.servers).forEach(id => online += db.servers[id].playerCount);
+                }
+
+                document.getElementById('stat-online').innerText = online;
+                document.getElementById('stat-total').innerText = db.players.length;
+                document.getElementById('stat-servers').innerText = Object.keys(db.servers).length;
+
+                if (document.getElementById('tab-players').classList.contains('hidden') === false) {
+                    const list = document.getElementById('players-list');
+                    list.innerHTML = '';
+                    db.players.forEach(p => {
+                        list.innerHTML += `
+                            <div class="p-6 border-b border-neutral-900 flex items-center justify-between hover:bg-[#111] transition-colors">
+                                <div class="flex items-center gap-6">
+                                    <img src="${API_BASE}/avatar/${p.userId}" class="w-16 h-16 rounded border border-neutral-800 bg-neutral-900">
+                                    <div>
+                                        <p class="font-black text-xl text-white tracking-wide">${p.username}</p>
+                                        <p class="text-sm text-neutral-500 font-mono mt-1">ID: ${p.userId}</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-4">
+                                    <button onclick="sendCommand('kick', ${p.userId})" class="border border-neutral-700 text-white px-6 py-2 rounded hover:bg-white hover:text-black font-bold tracking-widest text-sm transition-colors">KICK</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                if (document.getElementById('tab-console').classList.contains('hidden') === false) {
+                    const logs = document.getElementById('log-container');
+                    logs.innerHTML = '';
+                    db.logs.reverse().forEach(l => {
+                        let color = l.type === 'Enum.MessageType.MessageError' ? 'text-red-500' : 'text-neutral-300';
+                        logs.innerHTML += `<p class="${color}">[${l.jobId.substring(0,8)}] ${l.message}</p>`;
+                    });
+                }
+
+            } catch(err) {}
         }
 
         checkAuth();
