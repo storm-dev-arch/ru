@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
+const axios = require('axios');
 
 const app = express();
 app.use(express.json());
@@ -10,7 +11,7 @@ const ROBLOX_API_KEY = "TERRLISSON_SECRET_KEY";
 const DB_FILE = './database.json';
 
 if (!fs.existsSync(DB_FILE)) {
-    fs.writeFileSync(DB_FILE, JSON.stringify({ players: [] }));
+    fs.writeFileSync(DB_FILE, JSON.stringify({ players: [], servers: {}, logs: [], commands: [] }));
 }
 
 const readDB = () => JSON.parse(fs.readFileSync(DB_FILE));
@@ -25,29 +26,67 @@ app.post('/api/auth/login', (req, res) => {
     }
 });
 
-app.post('/api/roblox/playerJoin', (req, res) => {
-    if (req.headers.authorization !== ROBLOX_API_KEY) {
-        return res.status(403).json({ error: 'Unauthorized' });
-    }
+app.post('/api/roblox/sync', (req, res) => {
+    if (req.headers.authorization !== ROBLOX_API_KEY) return res.status(403).json({ error: 'Unauthorized' });
     
-    const { userId, username } = req.body;
+    const { jobId, players } = req.body;
     const db = readDB();
-    let player = db.players.find(p => p.userId === userId);
     
-    if (player) {
-        if (player.isBanned) return res.status(403).json({ banned: true, reason: player.banReason });
-        player.visits += 1;
-    } else {
-        db.players.push({ userId, username, visits: 1, isBanned: false });
+    db.servers[jobId] = {
+        lastSeen: Date.now(),
+        playerCount: players.length,
+        players: players.map(p => p.userId)
+    };
+
+    players.forEach(p => {
+        let player = db.players.find(x => x.userId === p.userId);
+        if (player) {
+            player.username = p.username;
+        } else {
+            db.players.push({ userId: p.userId, username: p.username, isBanned: false });
+        }
+    });
+
+    for (const id in db.servers) {
+        if (Date.now() - db.servers[id].lastSeen > 15000) {
+            delete db.servers[id];
+        }
     }
-    
+
+    const pendingCommands = db.commands.filter(c => c.jobId === jobId || c.jobId === "all");
+    db.commands = db.commands.filter(c => !(c.jobId === jobId || c.jobId === "all"));
+
     writeDB(db);
-    res.json({ success: true, banned: false });
+    res.json({ commands: pendingCommands });
 });
 
-app.get('/api/admin/players', (req, res) => {
+app.post('/api/roblox/log', (req, res) => {
+    if (req.headers.authorization !== ROBLOX_API_KEY) return res.status(403).send();
     const db = readDB();
-    res.json(db.players);
+    db.logs.push({ time: Date.now(), ...req.body });
+    if (db.logs.length > 200) db.logs.shift();
+    writeDB(db);
+    res.send();
+});
+
+app.get('/api/admin/data', (req, res) => {
+    res.json(readDB());
+});
+
+app.post('/api/admin/command', (req, res) => {
+    const db = readDB();
+    db.commands.push(req.body);
+    writeDB(db);
+    res.json({ success: true });
+});
+
+app.get('/api/avatar/:id', async (req, res) => {
+    try {
+        const response = await axios.get(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${req.params.id}&size=150x150&format=Png&isCircular=true`);
+        res.redirect(response.data.data[0].imageUrl);
+    } catch (e) {
+        res.redirect('https://tr.rbxcdn.com/30day-avatar-default.png');
+    }
 });
 
 const PORT = process.env.PORT || 3000;
