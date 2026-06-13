@@ -43,6 +43,7 @@ app.post('/api/roblox/sync', (req, res) => {
         if (existingPlayer) {
             existingPlayer.username = p.username;
             existingPlayer.coins = p.coins;
+            existingPlayer.inventory = p.inventory;
             existingPlayer.lastSeen = Date.now();
             if (!existingPlayer.firstJoined) existingPlayer.firstJoined = Date.now();
         } else {
@@ -50,6 +51,7 @@ app.post('/api/roblox/sync', (req, res) => {
                 userId: p.userId, 
                 username: p.username, 
                 coins: p.coins,
+                inventory: p.inventory,
                 firstJoined: Date.now(),
                 lastSeen: Date.now()
             });
