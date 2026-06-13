@@ -13,9 +13,10 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: #333; }
+        .modal-bg { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px); }
     </style>
 </head>
-<body class="min-h-screen flex">
+<body class="min-h-screen flex relative">
     <div id="login-screen" class="w-full min-h-screen flex items-center justify-center bg-black">
         <form id="login-form" class="bg-[#0a0a0a] p-10 rounded-lg border border-neutral-800 flex flex-col gap-6 w-96 shadow-2xl">
             <h2 class="text-3xl font-black tracking-widest text-center text-white">SYSTEM</h2>
@@ -74,16 +75,63 @@
                 <div class="flex gap-4 mb-6">
                     <input type="text" id="cmd-input" placeholder="Введите Lua скрипт..." class="flex-1 bg-black border border-neutral-800 p-4 rounded text-white outline-none font-mono">
                     <button onclick="sendCommand('console')" class="bg-white text-black font-bold px-8 rounded hover:bg-neutral-300">EXECUTE</button>
+                    <button onclick="copyLogs()" class="bg-neutral-800 text-white font-bold px-8 rounded hover:bg-neutral-700 ml-2">COPY LOGS</button>
                 </div>
                 <div class="flex-1 bg-black border border-neutral-800 rounded p-4 overflow-y-auto log-box text-sm flex flex-col gap-1" id="log-container"></div>
             </div>
         </main>
     </div>
 
+    <!-- Модальное окно управления игроком -->
+    <div id="manage-modal" class="fixed inset-0 modal-bg z-50 flex items-center justify-center hidden">
+        <div class="bg-[#0a0a0a] border border-neutral-800 rounded-lg p-8 w-[500px] shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-black tracking-wide" id="modal-player-name">PLAYER_NAME</h3>
+                <button onclick="closeManageModal()" class="text-neutral-500 hover:text-white font-bold text-xl">&times;</button>
+            </div>
+            
+            <div class="flex flex-col gap-6">
+                <!-- Giftbux -->
+                <div class="bg-black p-4 border border-neutral-800 rounded">
+                    <p class="text-xs text-neutral-500 font-bold tracking-widest mb-3">ВЫДАТЬ GIFTBUX (МОНЕТЫ)</p>
+                    <div class="flex gap-2">
+                        <input type="number" id="input-coins" placeholder="Количество..." class="flex-1 bg-[#111] border border-neutral-800 p-3 rounded text-white outline-none">
+                        <button onclick="manageAction('give_coins')" class="bg-green-600 font-bold px-6 rounded hover:bg-green-500 transition-colors">ВЫДАТЬ</button>
+                    </div>
+                </div>
+
+                <!-- Кейсы -->
+                <div class="bg-black p-4 border border-neutral-800 rounded">
+                    <p class="text-xs text-neutral-500 font-bold tracking-widest mb-3">ВЫДАТЬ КЕЙСЫ</p>
+                    <select id="input-case-name" class="w-full bg-[#111] border border-neutral-800 p-3 rounded text-white outline-none mb-2">
+                        <option value="DotaCase">Dota Кейс</option>
+                        <option value="LoveCase">Love Кейс</option>
+                        <option value="SummerCase">Summer Кейс</option>
+                        <option value="MemeCase">Meme Кейс</option>
+                    </select>
+                    <div class="flex gap-2">
+                        <input type="number" id="input-case-amount" placeholder="Количество..." class="flex-1 bg-[#111] border border-neutral-800 p-3 rounded text-white outline-none">
+                        <button onclick="manageAction('give_case')" class="bg-purple-600 font-bold px-6 rounded hover:bg-purple-500 transition-colors">ВЫДАТЬ</button>
+                    </div>
+                </div>
+
+                <!-- Неймтеги -->
+                <div class="bg-black p-4 border border-neutral-800 rounded">
+                    <p class="text-xs text-neutral-500 font-bold tracking-widest mb-3">ВЫДАТЬ NAMETAG</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="input-tag-id" placeholder="ID Тега (например 15)..." class="flex-1 bg-[#111] border border-neutral-800 p-3 rounded text-white outline-none">
+                        <button onclick="manageAction('give_tag')" class="bg-blue-600 font-bold px-6 rounded hover:bg-blue-500 transition-colors">ВЫДАТЬ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const API_BASE = "https://ruapi.onrender.com/api";
+        const API_BASE = "https://ruapi.onrender.com/api"; // ТВОЯ ССЫЛКА НА RENDER
         let token = localStorage.getItem('adminToken');
         let refreshInterval;
+        let currentPlayerManage = null;
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -126,17 +174,63 @@
             document.getElementById(`btn-${tabId}`).classList.add('active');
         }
 
-        async function sendCommand(action, userId = null) {
+        function openManageModal(username) {
+            currentPlayerManage = username;
+            document.getElementById('modal-player-name').innerText = username;
+            document.getElementById('manage-modal').classList.remove('hidden');
+        }
+
+        function closeManageModal() {
+            currentPlayerManage = null;
+            document.getElementById('manage-modal').classList.add('hidden');
+        }
+
+        async function manageAction(action) {
+            if (!currentPlayerManage) return;
+            
+            let payload = { action: action, username: currentPlayerManage, jobId: "all" };
+            
+            if (action === 'give_coins') {
+                payload.amount = parseInt(document.getElementById('input-coins').value);
+                document.getElementById('input-coins').value = '';
+            } else if (action === 'give_case') {
+                payload.caseName = document.getElementById('input-case-name').value;
+                payload.amount = parseInt(document.getElementById('input-case-amount').value);
+                document.getElementById('input-case-amount').value = '';
+            } else if (action === 'give_tag') {
+                payload.tagId = document.getElementById('input-tag-id').value;
+                document.getElementById('input-tag-id').value = '';
+            }
+
+            if(action === 'give_coins' || action === 'give_case') {
+                if(!payload.amount || payload.amount <= 0) return alert("Введите корректное количество!");
+            }
+            if(action === 'give_tag' && !payload.tagId) return alert("Введите ID тега!");
+
+            await fetch(`${API_BASE}/admin/command`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            alert("Команда успешно отправлена на сервера!");
+        }
+
+        async function sendCommand(action, username = null) {
             const jobId = document.getElementById('server-selector')?.value || "all";
             const code = document.getElementById('cmd-input')?.value || "";
             
             await fetch(`${API_BASE}/admin/command`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, jobId, userId, code })
+                body: JSON.stringify({ action, jobId, username, code })
             });
             
             if (action === 'console') document.getElementById('cmd-input').value = "";
+        }
+
+        function copyLogs() {
+            const logs = document.getElementById('log-container').innerText;
+            navigator.clipboard.writeText(logs).then(() => alert("Логи скопированы!"));
         }
 
         async function loadData() {
@@ -148,7 +242,7 @@
                 const serversList = document.getElementById('servers-list');
                 const selector = document.getElementById('server-selector');
                 
-                if (document.getElementById('tab-servers').classList.contains('hidden') === false || document.getElementById('tab-console').classList.contains('hidden') === false) {
+                if (!document.getElementById('tab-servers').classList.contains('hidden') || !document.getElementById('tab-console').classList.contains('hidden')) {
                     serversList.innerHTML = '';
                     const oldVal = selector.value;
                     selector.innerHTML = '<option value="all">Все сервера</option>';
@@ -178,28 +272,32 @@
                 document.getElementById('stat-total').innerText = db.players.length;
                 document.getElementById('stat-servers').innerText = Object.keys(db.servers).length;
 
-                if (document.getElementById('tab-players').classList.contains('hidden') === false) {
+                if (!document.getElementById('tab-players').classList.contains('hidden')) {
                     const list = document.getElementById('players-list');
                     list.innerHTML = '';
                     db.players.forEach(p => {
                         list.innerHTML += `
                             <div class="p-6 border-b border-neutral-900 flex items-center justify-between hover:bg-[#111] transition-colors">
                                 <div class="flex items-center gap-6">
-                                    <img src="${API_BASE}/avatar/${p.userId}" class="w-16 h-16 rounded border border-neutral-800 bg-neutral-900">
+                                    <img src="https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${p.userId}&size=150x150&format=Png&isCircular=true" class="w-16 h-16 rounded border border-neutral-800 bg-neutral-900">
                                     <div>
                                         <p class="font-black text-xl text-white tracking-wide">${p.username}</p>
-                                        <p class="text-sm text-neutral-500 font-mono mt-1">ID: ${p.userId}</p>
+                                        <div class="flex gap-3 mt-1">
+                                            <p class="text-sm text-neutral-500 font-mono">ID: ${p.userId}</p>
+                                            <p class="text-sm text-green-500 font-bold font-mono">💰 ${p.coins || 0} Giftbux</p>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="flex gap-4">
-                                    <button onclick="sendCommand('kick', ${p.userId})" class="border border-neutral-700 text-white px-6 py-2 rounded hover:bg-white hover:text-black font-bold tracking-widest text-sm transition-colors">KICK</button>
+                                <div class="flex gap-3">
+                                    <button onclick="openManageModal('${p.username}')" class="bg-neutral-800 text-white px-6 py-2 rounded hover:bg-neutral-700 font-bold tracking-widest text-sm transition-colors border border-neutral-700">УПРАВЛЯТЬ</button>
+                                    <button onclick="sendCommand('kick', '${p.username}')" class="border border-red-900 text-red-500 px-6 py-2 rounded hover:bg-red-900 hover:text-white font-bold tracking-widest text-sm transition-colors">KICK</button>
                                 </div>
                             </div>
                         `;
                     });
                 }
 
-                if (document.getElementById('tab-console').classList.contains('hidden') === false) {
+                if (!document.getElementById('tab-console').classList.contains('hidden')) {
                     const logs = document.getElementById('log-container');
                     logs.innerHTML = '';
                     db.logs.reverse().forEach(l => {
