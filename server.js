@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
+const axios = require('axios');
 const app = express();
 
 app.use(express.json());
@@ -31,13 +32,27 @@ app.post('/api/roblox/sync', (req, res) => {
     
     db.servers[jobId] = { lastSeen: Date.now(), playerCount: players.length, players: players.map(p => p.username) };
     
+    for (const id in db.servers) {
+        if (Date.now() - db.servers[id].lastSeen > 15000) {
+            delete db.servers[id];
+        }
+    }
+
     players.forEach(p => { 
         let existingPlayer = db.players.find(x => x.userId === p.userId);
         if (existingPlayer) {
             existingPlayer.username = p.username;
-            existingPlayer.coins = p.coins; // Обновляем монеты
+            existingPlayer.coins = p.coins;
+            existingPlayer.lastSeen = Date.now();
+            if (!existingPlayer.firstJoined) existingPlayer.firstJoined = Date.now();
         } else {
-            db.players.push({ userId: p.userId, username: p.username, coins: p.coins });
+            db.players.push({ 
+                userId: p.userId, 
+                username: p.username, 
+                coins: p.coins,
+                firstJoined: Date.now(),
+                lastSeen: Date.now()
+            });
         }
     });
 
@@ -51,7 +66,7 @@ app.post('/api/roblox/sync', (req, res) => {
 app.post('/api/roblox/log', (req, res) => {
     if (req.headers.authorization !== ROBLOX_API_KEY) return res.status(403).send();
     const db = readDB();
-    db.logs.push({ time: new Date().toLocaleTimeString(), ...req.body });
+    db.logs.push({ time: new Date().toLocaleTimeString('ru-RU', { timeZone: 'Europe/Moscow' }), ...req.body });
     if (db.logs.length > 100) db.logs.shift();
     writeDB(db);
     res.json({ status: 'ok' });
@@ -64,6 +79,15 @@ app.post('/api/admin/command', (req, res) => {
     db.commands.push(req.body);
     writeDB(db);
     res.json({ success: true });
+});
+
+app.get('/api/avatar/:id', async (req, res) => {
+    try {
+        const response = await axios.get(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${req.params.id}&size=150x150&format=Png&isCircular=true`);
+        res.redirect(response.data.data[0].imageUrl);
+    } catch (e) {
+        res.redirect('https://tr.rbxcdn.com/30day-avatar-default.png');
+    }
 });
 
 app.listen(process.env.PORT || 3000);
