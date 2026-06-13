@@ -25,13 +25,25 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 app.post('/api/roblox/sync', (req, res) => {
-    if (req.headers.authorization !== ROBLOX_API_KEY) return res.status(403).json({ error: 'Auth failed' });
+    if (req.headers.authorization !== ROBLOX_API_KEY) return res.status(403).json({});
     const db = readDB();
     const { jobId, players } = req.body;
+    
     db.servers[jobId] = { lastSeen: Date.now(), playerCount: players.length, players: players.map(p => p.username) };
-    players.forEach(p => { if (!db.players.find(x => x.userId === p.userId)) db.players.push({ userId: p.userId, username: p.username }); });
+    
+    players.forEach(p => { 
+        let existingPlayer = db.players.find(x => x.userId === p.userId);
+        if (existingPlayer) {
+            existingPlayer.username = p.username;
+            existingPlayer.coins = p.coins; // Обновляем монеты
+        } else {
+            db.players.push({ userId: p.userId, username: p.username, coins: p.coins });
+        }
+    });
+
     const commands = db.commands.filter(c => c.jobId === jobId || c.jobId === "all");
     db.commands = db.commands.filter(c => !(c.jobId === jobId || c.jobId === "all"));
+    
     writeDB(db);
     res.json({ commands });
 });
